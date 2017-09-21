@@ -5,19 +5,35 @@
 #pragma semicolon 1
 
 #define TAG_MESSAGE "[\x02VIP\x01]"
+#define TOKEN_LIMIT 6
 
 static const char vipCodes[][] =
 {
 	"adszxc",
 	"moomoo",
-}; 
+};
+
+static const char tokenCharacters[][] =
+{
+	"a", "b", "c", "d", "e", "f",
+	"g", "h", "i", "j", "k", "l",
+	"m", "n", "o", "p", "q", "r",
+	"s", "t", "u", "v", "w", "x",
+	"y", "z", "A", "B", "C", "D",
+	"E", "F", "G", "H", "I", "J",
+	"K", "L", "M", "N", "O", "P",
+	"Q", "R", "S", "T", "U", "V",
+	"W", "X", "Y", "Z", "0", "1",
+	"2", "3", "4", "5", "6", "7",
+	"8", "9"
+};
 
 public Plugin myinfo =
 {
     name = "Give VIP",
     author = "B3none",
     description = "Temporarily give players VIP in the server.",
-    version = "0.1.1",
+    version = "0.1.0",
     url = "https://forums.alliedmods.net/showthread.php?t=301305"
 };
 
@@ -30,13 +46,22 @@ public void OnPluginStart()
 
 public Action generateNewCode()
 {
-	// Generate a new VIP code
+	char newToken[TOKEN_LIMIT];
+	
+	for (int i = 1; i <= TOKEN_LIMIT && strlen(newToken) < TOKEN_LIMIT; i++) {
+		Format(newToken, sizeof(newToken), "%s%s", newToken, tokenCharacters[GetRandomInt(1, sizeof(tokenCharacters))]);
+	}
 }
 
 public Action checkCode(int client, int args)
 {
 	char code[64];
 	GetCmdArgString(code, sizeof(code));
+	
+	if (strlen(code) > TOKEN_LIMIT) {
+		PrintToChat(client, "%s Invalid token.", TAG_MESSAGE);
+		return;
+	}
 	
 	for (int i = 0; i <= sizeof(vipCodes); i++) {
 		if (StrEqual(code, vipCodes[i])) {
