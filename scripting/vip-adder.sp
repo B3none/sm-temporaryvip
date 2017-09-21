@@ -33,7 +33,7 @@ public Plugin myinfo =
     name = "Give VIP",
     author = "B3none",
     description = "Temporarily give players VIP in the server.",
-    version = "0.1.0",
+    version = "0.1.2",
     url = "https://forums.alliedmods.net/showthread.php?t=301305"
 };
 
