@@ -40,17 +40,25 @@ public Plugin myinfo =
 public void OnPluginStart()
 {
 	RegConsoleCmd("sm_vip", checkCode);
-	RegAdminCmd("sm_addstatus", addStatus, ADMFLAG_GENERIC);
-	RegAdminCmd("sm_generate", addStatus, ADMFLAG_GENERIC);
+	RegAdminCmd("sm_addstatus", addStatus, ADMFLAG_ROOT);
+	RegAdminCmd("sm_generate", generateNewCode, ADMFLAG_ROOT);
 }
 
-public Action generateNewCode()
+public Action generateNewCode(int client, int args)
 {
 	char newToken[TOKEN_LIMIT];
 	
 	for (int i = 1; i <= TOKEN_LIMIT && strlen(newToken) < TOKEN_LIMIT; i++) {
 		Format(newToken, sizeof(newToken), "%s%s", newToken, tokenCharacters[GetRandomInt(1, sizeof(tokenCharacters))]);
 	}
+	
+	char clientName[64];
+	GetClientName(client, clientName, sizeof(clientName));
+	
+	// Add code to database
+	
+	PrintToChat(client, "%s The generated code is %s", TAG_MESSAGE, newToken);
+	LogMessage("%s %s generated code \"%s\"", TAG_MESSAGE, clientName, newToken);
 }
 
 public Action checkCode(int client, int args)
@@ -66,6 +74,9 @@ public Action checkCode(int client, int args)
 	for (int i = 0; i <= sizeof(vipCodes); i++) {
 		if (StrEqual(code, vipCodes[i])) {
 			addStatus(0, client);
+			
+			// Remove used code from the database
+			
 			break;
 		}
 	}
