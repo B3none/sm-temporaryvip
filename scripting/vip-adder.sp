@@ -13,6 +13,11 @@ static const char vipCodes[][] =
 	"moomoo",
 };
 
+static const char developerArgs[][] =
+{
+	"debug",
+};
+
 static const char tokenCharacters[][] =
 {
 	"a", "b", "c", "d", "e", "f",
@@ -47,6 +52,17 @@ public void OnPluginStart()
 public Action generateNewCode(int client, int args)
 {
 	char newToken[TOKEN_LIMIT];
+	
+	char argString[64];
+	GetCmdArgString(argString, sizeof(argString));
+	
+	if (strlen(argString) > 0) {
+		for (int i = 0; i <= sizeof(developerArgs); i++) {
+			if (argString == developerArgs[i]) {
+				
+			}
+		}
+	}
 	
 	for (int i = 1; i <= TOKEN_LIMIT && strlen(newToken) < TOKEN_LIMIT; i++) {
 		Format(newToken, sizeof(newToken), "%s%s", newToken, tokenCharacters[GetRandomInt(1, sizeof(tokenCharacters))]);
