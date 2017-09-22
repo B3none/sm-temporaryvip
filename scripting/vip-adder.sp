@@ -56,20 +56,28 @@ public Action generateNewCode(int client, int args)
 	char argString[64];
 	GetCmdArgString(argString, sizeof(argString));
 	
+	bool debugState = false;
+	
 	if (strlen(argString) > 0) {
-		for (int i = 0; i <= sizeof(developerArgs); i++) {
-			if (argString == developerArgs[i]) {
-				
-			}
+		if (StrEqual(argString, developerArgs[0])) {
+			PrintToChat(client, "%s Debug mode initiated.", TAG_MESSAGE);
+			debugState = true;
 		}
 	}
 	
 	for (int i = 1; i <= TOKEN_LIMIT && strlen(newToken) < TOKEN_LIMIT; i++) {
 		Format(newToken, sizeof(newToken), "%s%s", newToken, tokenCharacters[GetRandomInt(1, sizeof(tokenCharacters))]);
+		if (debugState) {
+			PrintToChat(client, "%s Current token: %s (increment %i / %i)", TAG_MESSAGE, newToken, i, TOKEN_LIMIT);
+		}
 	}
 	
 	char clientName[64];
 	GetClientName(client, clientName, sizeof(clientName));
+	
+	if (debugState) {
+		PrintToChat(client, "%s Token to be added: %s", TAG_MESSAGE, newToken);
+	}
 	
 	// Add code to database
 	
