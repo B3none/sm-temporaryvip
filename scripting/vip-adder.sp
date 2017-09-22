@@ -114,7 +114,6 @@ public Action addStatus(int client, int target)
 		return;
 	}
 	
-	
 	char clientName[64];
 	char targetName[64];
 	
@@ -134,5 +133,5 @@ public Action addStatus(int client, int target)
 
 stock bool IsValidClient(int client)
 {
-	return (client <= 0 || client > MAXPLAYERS+1 || !IsClientInGame(client));
+	return (client <= 0 || client > MaxClients || !IsClientInGame(client));
 }
