@@ -4,18 +4,13 @@
 #pragma newdecls required
 #pragma semicolon 1
 
-#define TAG_MESSAGE "[\x02VIP\x01]"
-#define TOKEN_LIMIT 6
+#define MESSAGE_PREFIX "[\x02VIP\x01]"
+#define CODE_LENGTH 6
 
 static const char vipCodes[][] =
 {
 	"adszxc",
 	"moomoo",
-};
-
-static const char developerArgs[][] =
-{
-	"debug",
 };
 
 static const char tokenCharacters[][] =
@@ -33,71 +28,54 @@ static const char tokenCharacters[][] =
 	"8", "9"
 };
 
+bool isVIP[MAXPLAYERS + 1];
+
 public Plugin myinfo =
 {
-    name = "Give VIP",
+    name = "VIP adder",
     author = "B3none",
     description = "Temporarily give players VIP in the server.",
     version = "0.1.2",
-    url = "https://forums.alliedmods.net/showthread.php?t=301305"
+    url = "https://github.com/b3none"
 };
 
 public void OnPluginStart()
 {
-	RegConsoleCmd("sm_vip", checkCode);
-	RegAdminCmd("sm_addstatus", addStatus, ADMFLAG_ROOT);
-	RegAdminCmd("sm_generate", generateNewCode, ADMFLAG_ROOT);
+	RegConsoleCmd("sm_vip", CheckCode);
+	
+	RegAdminCmd("sm_addstatus", AddStatus, ADMFLAG_ROOT);
+	RegAdminCmd("sm_generate", GenerateNewCode, ADMFLAG_ROOT);
 }
 
-public Action generateNewCode(int client, int args)
+public Action GenerateNewCode(int client, int args)
 {
-	char newToken[TOKEN_LIMIT];
+	char newCode[CODE_LENGTH];
 	
-	char argString[64];
-	GetCmdArgString(argString, sizeof(argString));
-	
-	bool debugState = false;
-	
-	if (strlen(argString) > 0) {
-		if (StrEqual(argString, developerArgs[0])) {
-			PrintToChat(client, "%s Debug mode initiated.", TAG_MESSAGE);
-			debugState = true;
-		}
-	}
-	
-	for (int i = 1; i <= TOKEN_LIMIT && strlen(newToken) < TOKEN_LIMIT; i++) {
-		Format(newToken, sizeof(newToken), "%s%s", newToken, tokenCharacters[GetRandomInt(1, sizeof(tokenCharacters))]);
-		if (debugState) {
-			PrintToChat(client, "%s Current token: %s (increment %i / %i)", TAG_MESSAGE, newToken, i, TOKEN_LIMIT);
-		}
-	}
-	
-	char clientName[64];
-	GetClientName(client, clientName, sizeof(clientName));
-	
-	if (debugState) {
-		PrintToChat(client, "%s Token to be added: %s", TAG_MESSAGE, newToken);
+	for(int i = 1; i <= CODE_LENGTH; i++)
+	{
+		Format(newCode, sizeof(newCode), "%s%s", newCode, tokenCharacters[GetRandomInt(0, sizeof(tokenCharacters) - 1)]);
 	}
 	
 	// Add code to database
 	
-	PrintToChat(client, "%s The generated code is %s", TAG_MESSAGE, newToken);
-	LogMessage("%s %s generated code \"%s\"", TAG_MESSAGE, clientName, newToken);
+	PrintToChat(client, "%s The generated code is %s", MESSAGE_PREFIX, newCode);
+	LogMessage("%s %N generated code \"%s\"", MESSAGE_PREFIX, client, newCode);
 }
 
-public Action checkCode(int client, int args)
+public Action CheckCode(int client, int args)
 {
 	char code[64];
 	GetCmdArgString(code, sizeof(code));
 	
-	if (strlen(code) > TOKEN_LIMIT) {
-		PrintToChat(client, "%s Invalid token.", TAG_MESSAGE);
+	if(strlen(code) > CODE_LENGTH)
+	{
+		PrintToChat(client, "%s Invalid code.", MESSAGE_PREFIX);
 		return;
 	}
 	
 	for (int i = 0; i <= sizeof(vipCodes); i++) {
 		if (StrEqual(code, vipCodes[i])) {
-			addStatus(0, client);
+			AddStatus(0, client);
 			
 			// Remove used code from the database
 			
@@ -105,33 +83,54 @@ public Action checkCode(int client, int args)
 		}
 	}
 	
-	PrintToChat(client, "%s Invalid token.", TAG_MESSAGE);
+	PrintToChat(client, "%s Invalid token.", MESSAGE_PREFIX);
 }
 
-public Action addStatus(int client, int target)
+public Action AddStatus(int client, int args)
 {
-	if ((!IsValidClient(client) && client != 0) || !IsValidClient(target)) {
+	char targetSearch[64];
+	GetCmdArgString(targetSearch, sizeof(targetSearch));
+
+	int target = FindTarget(client, targetSearch);
+	
+	if ((!IsValidClient(client) && client != 0) || !IsValidClient(target))
+	{
+		return;
+	}
+	else if (CheckCommandAccess(target, "sm_admin_check", ADMFLAG_RESERVATION))
+	{
 		return;
 	}
 	
-	char clientName[64];
-	char targetName[64];
+	AddUserFlags(target, Admin_Reservation);
+	isVIP[target] = true;
 	
-	GetClientName(client, clientName, sizeof(clientName));
-	GetClientName(target, targetName, sizeof(targetName));
-	
-	if (CheckCommandAccess(target, "sm_admin_check", ADMFLAG_RESERVATION)) {
-		AddUserFlags(target, Admin_Reservation);
+	if (client == 0) 
+	{
+		PrintToChatAll("%s %N was granted temporary VIP access via a secret token", MESSAGE_PREFIX, target);
+	} 
+	else 
+	{
+		PrintToChatAll("%s %N granted temporary VIP access to %N", MESSAGE_PREFIX, client, target);
 	}
-	
-	if (client == 0) {
-		PrintToChatAll("%s %s was granted VIP access via a secret token", TAG_MESSAGE, targetName);
-	} else {
-		PrintToChatAll("%s %s granted VIP access to %s", TAG_MESSAGE, clientName, targetName);
+}
+
+public void OnRebuildAdminCache()
+{
+	for(int i = 1; i <= MaxClients; i++)
+	{
+		if (isVIP[i]) {
+			AddUserFlags(i, Admin_Reservation);
+		}
 	}
+}
+
+public void OnClientDisconnect(int client)
+{
+	isVIP[client] = false;
 }
 
 stock bool IsValidClient(int client)
 {
-	return (client <= 0 || client > MaxClients || !IsClientInGame(client));
+    return client > 0 && client <= MaxClients && IsClientInGame(client) && IsClientConnected(client) && IsClientAuthorized(client) && !IsFakeClient(client);
 }
