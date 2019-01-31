@@ -32,7 +32,7 @@ bool isVIP[MAXPLAYERS + 1];
 
 public Plugin myinfo =
 {
-    name = "VIP adder",
+    name = "Temporary VIP",
     author = "B3none",
     description = "Temporarily give players VIP in the server.",
     version = "0.1.2",
